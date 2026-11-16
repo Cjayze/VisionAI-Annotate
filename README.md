@@ -2,6 +2,9 @@
 
 AI-assisted image detection, annotation, review, and dataset export. YOLO11 Nano inference runs in the browser with ONNX Runtime Web, so uploaded images are not sent to an inference server.
 
+# Link Deploy
+https://cjayze.github.io/VisionAI-Annotate/
+
 ## Features
 
 - Run object detection and view confidence-scored bounding boxes.
