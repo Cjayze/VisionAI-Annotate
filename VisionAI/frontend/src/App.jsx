@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { Upload, ScanSearch, Download, Image as ImageIcon, Loader2, RefreshCw, CheckCircle2, AlertCircle, Boxes, Square, Pentagon, Trash2, Check, BookOpen } from "lucide-react";
 
-const API = "http://localhost:8000";
+const configuredApi = import.meta.env.VITE_API_URL?.trim();
+const API = configuredApi ? (/^https?:\/\//i.test(configuredApi) ? configuredApi : `https://${configuredApi}`) : "http://localhost:8000";
 const palette = ["#55d6be", "#ffbd69", "#8da7ff", "#f78fb3", "#c3a6ff", "#a3e635"];
 const uid = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 

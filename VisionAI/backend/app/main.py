@@ -1,5 +1,6 @@
 from io import BytesIO
 from functools import lru_cache
+import os
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,9 +9,13 @@ from ultralytics import YOLO
 
 app = FastAPI(title="VisionAI API", version="1.0.0")
 
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "")
+if frontend_origin and not frontend_origin.startswith(("http://", "https://")):
+    frontend_origin = f"https://{frontend_origin}"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", frontend_origin] if frontend_origin else ["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
