@@ -1,8 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Upload, ScanSearch, Download, Image as ImageIcon, Loader2, RefreshCw, CheckCircle2, AlertCircle, Boxes, Square, Pentagon, Trash2, Check, BookOpen } from "lucide-react";
-
-const configuredApi = import.meta.env.VITE_API_URL?.trim();
-const API = configuredApi ? (/^https?:\/\//i.test(configuredApi) ? configuredApi : `https://${configuredApi}`) : "http://localhost:8000";
+import { detectObjects } from "./inference";
 const palette = ["#55d6be", "#ffbd69", "#8da7ff", "#f78fb3", "#c3a6ff", "#a3e635"];
 const uid = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 
@@ -29,13 +27,11 @@ export default function App() {
   const runDetection = async () => {
     if (!file) return;
     setLoading(true); setError("");
-    const body = new FormData(); body.append("file", file); body.append("conf", String(confidence / 100));
     try {
-      const response = await fetch(`${API}/api/detect`, { method: "POST", body });
-      const data = await response.json(); if (!response.ok) throw new Error(data.detail || "Detection request failed.");
+      const data = await detectObjects(file, confidence / 100);
       setResult(data); setAnnotations(data.detections.map((d) => ({ ...d, box: { ...d.box }, polygon: null, source: "AI", status: "needs_review" })));
       setSelected(null);
-    } catch (e) { setError(`${e.message} Make sure the FastAPI backend is running at ${API}.`); }
+    } catch (e) { setError(`Browser detection failed: ${e.message}. Try a current version of Chrome, Edge, Firefox, or Safari.`); }
     finally { setLoading(false); }
   };
 
@@ -114,8 +110,9 @@ export default function App() {
         <aside className="panel control-panel"><div className="panel-heading"><div><div className="section-kicker">02 / REVIEW</div><h2>Labels & quality</h2></div></div>
           <div className="setting-block"><div className="setting-label"><span>New annotation label</span></div><input className="label-input" list="label-options" value={label} onChange={e=>setLabel(e.target.value)} placeholder="Enter class name"/><datalist id="label-options">{summary.map(([name])=><option key={name} value={name}/>)}</datalist></div>
           <div className="setting-block"><div className="setting-label"><span>AI confidence threshold</span><strong>{confidence}%</strong></div><input className="range" type="range" min="5" max="95" step="5" value={confidence} onChange={e=>setConfidence(Number(e.target.value))}/><div className="range-labels"><span>More detections</span><span>Higher certainty</span></div></div>
-          <div className="model-card"><div className="model-icon"><Boxes size={19}/></div><div><strong>YOLO11 Nano</strong><span>Pretrained object detection</span></div><span className="model-tag">READY</span></div>
-          <button className="primary-btn" disabled={!file||loading} onClick={runDetection}>{loading?<><Loader2 className="spin" size={17}/> Detecting objects...</>:<><ScanSearch size={17}/> Run AI detection</>}</button>
+          <div className="model-card"><div className="model-icon"><Boxes size={19}/></div><div><strong>YOLO11 Nano · ONNX</strong><span>Runs privately in this browser</span></div><span className="model-tag">ON DEVICE</span></div>
+          <button className="primary-btn" disabled={!file||loading} onClick={runDetection}>{loading?<><Loader2 className="spin" size={17}/> Loading model & detecting...</>:<><ScanSearch size={17}/> Run AI detection</>}</button>
+          <p className="privacy-note">Images stay on this device during detection. The ONNX model downloads when first used.</p>
           {result&&<button className="confirm-btn" disabled={!detections.length} onClick={confirmAll}><CheckCircle2 size={16}/> Confirm all {detections.length} labels</button>}
           <div className="qc-card"><div className="qc-title"><BookOpen size={15}/> QC checklist</div><div className="qc-row"><span>Labels need review</span><strong className={detections.some(d=>d.status!=="confirmed")?"qc-pending":"qc-done"}>{detections.filter(d=>d.status!=="confirmed").length}</strong></div><div className="qc-row"><span>Confirmed annotations</span><strong>{detections.filter(d=>d.status==="confirmed").length}</strong></div><div className="qc-note">Check class names, object boundaries, missing objects, and duplicates before export.</div></div>
           {error&&<div className="error"><AlertCircle size={16}/><span>{error}</span></div>}{result&&<div className="success"><CheckCircle2 size={16}/> Image ready · {detections.length} annotations</div>}

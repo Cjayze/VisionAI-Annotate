@@ -1,61 +1,38 @@
-# VisionAI – AI Detection & Annotation Workspace
+# VisionAI Annotate
 
-A local web app for AI-assisted object detection, human annotation review, and training-label export.
+AI-assisted image detection, annotation, review, and dataset export. YOLO11 Nano inference runs in the browser with ONNX Runtime Web, so uploaded images are not sent to an inference server.
 
 ## Features
-- Upload an image and run object detection
-- Display and review YOLO detections with bounding boxes and confidence scores
-- Draw bounding boxes and polygons manually; edit class names and confirm annotations
-- Track review status with a QC checklist and annotation guidance
-- Export the current image's labels as YOLO, COCO JSON, or Pascal VOC XML
-- FastAPI backend + React/Vite frontend
 
-## Requirements
-- Python 3.10+
-- Node.js 18+
-- Internet connection on first backend run so Ultralytics can download the pretrained model weights
+- Run object detection and view confidence-scored bounding boxes.
+- Draw boxes and polygons, edit labels, and confirm AI suggestions.
+- Review annotation status with a QC checklist.
+- Export labels for the current image as YOLO, COCO JSON, or Pascal VOC XML.
 
-## Run the backend
+## Run locally
+
+Requirements: Node.js 18 or later and a modern browser with WebAssembly support.
+
 ```bash
-cd backend
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS/Linux:
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-Backend: http://localhost:8000  
-API docs: http://localhost:8000/docs
-
-## Run the frontend
-Open another terminal:
-```bash
-cd frontend
-npm install
+cd VisionAI/frontend
+npm ci
 npm run dev
 ```
-Frontend: http://localhost:5173
+
+Open the local URL printed by Vite. The first detection downloads the 10.7 MB ONNX model; detection then runs on the device. The optional FastAPI backend remains available for API development, but the frontend does not need it to detect images.
+
+## Deploy free as a static site
+
+The repository includes a GitHub Actions workflow for GitHub Pages. In the repo, open **Settings → Pages** and set the source to **GitHub Actions**. Push changes to `main`; the workflow builds `VisionAI/frontend` and deploys it. The expected URL is `https://cjayze.github.io/VisionAI-Annotate/`.
+
+The root `render.yaml` also configures the frontend as a Render Static Site. Both options host the app without a paid inference backend because AI detection runs in the browser.
+
+## Annotation review and export
+
+Select an annotation to edit its class and confirm it, or confirm all after reviewing the image. Check that class names are consistent, boxes fit object boundaries, polygons follow object outlines, and visible objects are not missing or duplicated.
+
+Exports contain labels for the currently open image. YOLO and Pascal VOC represent boxes; COCO also includes polygon segmentation when available. This version does not bundle multiple images into a dataset archive.
 
 ## Model
-The starter uses `yolo11n.pt` through Ultralytics. The model is loaded on first prediction and cached by the library. For production, pin package/model versions and review model licensing and deployment requirements.
 
-## Annotation and exports
-
-Upload an image, run AI detection or choose **Box**/**Polygon** to annotate by hand. Select an annotation to edit its class and confirm it, or use **Confirm all** after reviewing the image. The QC checklist counts annotations that still need review. Before export, check that class names are consistent, boxes tightly cover the intended objects, polygons follow object boundaries, and no visible objects or duplicate labels are missing/extra.
-
-The export menu writes labels for the currently open image: YOLO normalized box rows (`class_id x_center y_center width height`), COCO JSON, or Pascal VOC XML. Polygon coordinates are included in COCO segmentation where available; YOLO and Pascal VOC exports represent boxes. This initial workspace exports one image at a time and does not bundle image files or class metadata into a multi-image dataset archive.
-
-## API
-`POST /api/detect`  
-Multipart form fields:
-- `file`: image file (JPEG, PNG, WEBP)
-- `conf`: confidence threshold (0.05–0.95)
-
-Returns image dimensions and a list of detections with class, confidence, and pixel coordinates (`x1`, `y1`, `x2`, `y2`).
-
-## Notes
-- This is a starter project, not a production deployment.
-- Detection results are model predictions and may be incorrect; users should verify labels before using the output as training data.
-- Uploaded files are processed in memory and are not persisted.
+The browser uses the exported `yolo11n.onnx` model in `VisionAI/frontend/public/models`. Model weights are downloaded by the browser on first inference. Review the Ultralytics model and software license terms before redistribution or commercial use.

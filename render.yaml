@@ -1,28 +1,7 @@
 services:
   - type: web
-    name: visionai-annotate-api
-    runtime: python
-    rootDir: VisionAI/backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.8
-      - key: FRONTEND_ORIGIN
-        fromService:
-          type: web
-          name: visionai-annotate
-          property: host
-
-  - type: web
     runtime: static
     name: visionai-annotate
     rootDir: VisionAI/frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: visionai-annotate-api
-          property: host
